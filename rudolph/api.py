@@ -481,6 +481,41 @@ class ruDolphApi:
             counts.append(count)
         return texts, np.array(counts)
 
+    def phrase_grounding(self,
+                         texts,
+                         pil_img,
+                         special_tokens,
+                         l_special_token='<LT_T2I>',
+                         r_special_token='<RT_I2T>',
+                         r_template='...',
+                         early_stop=64, seed=None, bs=None,
+                         generations_num=48,
+                         ):
+        texts = self.generate_phrase_grounding(texts=texts,
+                                  pil_img=pil_img,
+                                  special_tokens=special_tokens,
+                                  l_special_token=l_special_token,
+                                  r_special_token=r_special_token)
+        results = []
+        return results
+
+    def generate_phrase_grounding(self, texts,
+                         pil_img,
+                         special_tokens,
+                         l_special_token='<LT_T2I>',
+                         r_special_token='<RT_I2T>'):
+        out = []
+        torch.cuda.empty_cache()
+        img = self.image_transform(pil_img)
+
+        l_encoded = self.encode_text(l_template, text_seq_length=self.l_text_seq_length)
+        l_encoded[torch.where(l_encoded == self.spc_id)] = self.spc_tokens[l_special_token]
+
+        r_encoded = self.encode_text(r_template.lower().strip(), text_seq_length=self.r_text_seq_length)
+
+        return out
+
+
     def self_reranking_by_image(
             self,
             texts,
