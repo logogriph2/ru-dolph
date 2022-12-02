@@ -122,6 +122,7 @@ class ruDolphModel(torch.nn.Module):
             img_loss_weight=7,
             rt_loss_weight=1,
             category_weight=0,
+            fake_category_token=None,
             return_hidden_states=False,
     ):
         device = input_ids.device
@@ -204,11 +205,26 @@ class ruDolphModel(torch.nn.Module):
                 loss += loss_img * img_loss_weight
                 loss_weights += img_loss_weight
         if use_r_text:
-            loss_r_text = F.cross_entropy(
-                r_text_logits,
-                labels[:, -(self.r_text_seq_length - 1):],
-                ignore_index=0,
-            )
+            if fake_category_token is not None and torch.where(labels == fake_category_token)[1].size()[0] > 0:
+                fake_idxs = torch.where(labels == fake_category_token)[1]
+                fake_start = min(fake_idxs) - 4
+
+                label_idxs = list([k for k in range(self.l_text_seq_length + self.image_seq_length, fake_start)])
+                label_idxs += fake_idxs
+
+                r_text_logits_idxs = list(
+                    [idx - (self.l_text_seq_length + self.image_seq_length) for idx in label_idxs])
+
+                loss_r_text = F.cross_entropy(
+                    r_text_logits[:, :, r_text_logits_idxs],
+                    labels[:, label_idxs],
+                    ignore_index=0)
+            else:
+                loss_r_text = F.cross_entropy(
+                    r_text_logits,
+                    labels[:, -(self.r_text_seq_length - 1):],
+                    ignore_index=0,
+                )
             loss_values['r_text_loss'] = loss_r_text.data.detach().float()
             if rt_loss_weight:
                 loss += loss_r_text * rt_loss_weight
