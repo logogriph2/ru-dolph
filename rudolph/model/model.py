@@ -31,7 +31,6 @@ class ruDolphModel(torch.nn.Module):
                  mlp_activation='gelu_jit',
                  gradient_checkpointing=None):
         super(ruDolphModel, self).__init__()
-        print('Creating object detection mod model')
         self.device = device
         self.image_tokens_per_dim = image_tokens_per_dim
         self.image_seq_length = image_tokens_per_dim ** 2
